@@ -5,6 +5,7 @@ import android.os.Bundle
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DividerItemDecoration
 import kotlinx.android.synthetic.main.activity_list.*
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jetbrains.anko.startActivity
 import retrofit2.await
@@ -29,15 +30,21 @@ class ListActivity : BaseActivity(), BaseAdapter.Listener<Cover> {
             }
         )
         launch {
-            try {
-                val covers = serverApi.getCovers().await()
-                adapter.items.clear()
-                adapter.items.addAll(covers)
-                adapter.notifyDataSetChanged()
-                tv_total.text =
-                    "Всего - ${covers.size}. Последнее обновление ${dateFormatter.format(System.currentTimeMillis())}"
-            } catch (e: Throwable) {
-                e.printStackTrace()
+            var time = 1000L
+            while (true) {
+                try {
+                    val covers = serverApi.getCovers().await()
+                    adapter.items.clear()
+                    adapter.items.addAll(covers)
+                    adapter.notifyDataSetChanged()
+                    tv_total.text =
+                        "Всего - ${covers.size}. Последнее обновление ${dateFormatter.format(System.currentTimeMillis())}"
+                    break
+                } catch (e: Throwable) {
+                    e.printStackTrace()
+                    delay(time)
+                    time = (time * 2).coerceAtMost(10_000L)
+                }
             }
         }
     }
